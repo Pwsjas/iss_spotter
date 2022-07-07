@@ -1,4 +1,3 @@
-const { cookie } = require('request');
 const request = require('request');
 /**
  * Makes a single API request to retrieve the user's IP address.
@@ -19,7 +18,7 @@ const fetchMyIP = function(callback) {
       return;
     }
     const IP = JSON.parse(body).ip;
-    callback(error, IP);
+    callback(null, IP);
   });
 };
 
@@ -34,15 +33,32 @@ const fetchCoordsByIP = (ip, callback) => {
       callback(Error(msg), null);
       return;
     }
-    const COORDS = {
+    const coords = {
       latitude: JSON.parse(body).latitude,
       longitude: JSON.parse(body).longitude
+    };
+    callback(null, coords);
+  });
+};
+
+const fetchISSFlyOverTimes = (coords, callback) => {
+  request(`https://iss-pass.herokuapp.com/json/?lat=${coords.latitude}&lon=${coords.longitude}`, (error, response, body) => {
+    if (error) {
+      callback(error, null);
     }
-    callback(error, COORDS);
+    if (response.statusCode !== 200) {
+      const msg = `Status Code ${response.statusCode} when fetching flyover times. Response: ${body}`;
+      callback(Error(msg), null);
+      return;
+    }
+
+    const flyovers = JSON.parse(body).response;
+    callback(null, flyovers);
   });
 };
 
 module.exports = {
   fetchMyIP,
-  fetchCoordsByIP
+  fetchCoordsByIP,
+  fetchISSFlyOverTimes
 };
